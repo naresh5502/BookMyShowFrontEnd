@@ -9,7 +9,7 @@ import {
   Alert
 } from "react-native";
 
-const API_BASE = "http://10.90.13.242:3000/api";
+const API_BASE = "http://192.168.1.42:3000/api";
 
 export default function RegisterScreen({ navigation }) {
   const [name, setName] = useState("");

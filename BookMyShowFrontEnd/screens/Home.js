@@ -98,16 +98,10 @@ export default function HomeScreen({ navigation }) {
     skip: !selectedCity,
   });
 
-  
-  // console.log("Fetching TOken received from AsyncStorage in HomeScreen useEffect",token);
-  // console.log("The selected city from AsyncStorage in outside useEffect HomeScreen", selectedCity);
-
-  // Fetch movies from backend
-  // const {
-  //   data: movies,
-  //   isLoading,
-  //   isFetching,
-  //   error,
+  // Filter out movies with missing poster or name
+  const validMovies = movies?.filter(
+    (movie) => movie.moviePoster && movie.movieName
+  ) || [];
   // } = useGetMoviesByCityQuery(selectedCity, {
   //   skip: !selectedCity, // avoid API call if city not selected
   // });
@@ -235,9 +229,9 @@ export default function HomeScreen({ navigation }) {
         {/* === Movie List === */}
         <View style={styles.recommendList}>
           <FlatList
-            data={movies}
+            data={validMovies}
             keyExtractor={(item) => String(item.movieId)}
-            numColumns={3}
+            numColumns={2}
             scrollEnabled={false}
             columnWrapperStyle={styles.columnWrapper}
             renderItem={({ item: movie }) => (
@@ -413,18 +407,20 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   movieCard: {
+    width: "48%",
     alignItems: "center",
-    width: "31%",
   },
   movieImage: {
     width: "100%",
     aspectRatio: 2 / 3,
-    borderRadius: 10,
+    borderRadius: 12,
+    backgroundColor: "#ddd",
   },
   movieTitle: {
     marginTop: 8,
     width: "100%",
-    fontSize: 12,
+    fontSize: 13,
+    fontWeight: "500",
     textAlign: "center",
   },
 });

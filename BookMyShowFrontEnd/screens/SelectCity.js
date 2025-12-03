@@ -20,7 +20,7 @@ export default function SelectCity({ navigation }) {
   const dispatch = useDispatch();
   async function fetchCities() {
     try {
-      const res = await axios.get("http://10.90.13.242:3000/api/City/cities");
+      const res = await axios.get("http://192.168.1.42:3000/api/City/cities");
       setCities(res.data.data);
     } catch (err) {
       console.log("Error fetching cities: ", err);

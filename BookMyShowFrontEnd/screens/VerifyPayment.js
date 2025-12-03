@@ -66,7 +66,7 @@ export default function VerifyPayment({ route, navigation }) {
             dispatch(showSeatApi.util.invalidateTags([{ type: "ShowSeats", id: showId }]));
           }
 
-          const response = await fetch(`http://10.90.13.242:3000/api/Booking/booking/${bookingId}`);
+          const response = await fetch(`http://192.168.1.42:3000/api/Booking/booking/${bookingId}`);
           console.log("Data fetched for booking navigation:", response);
           const booking = await response.json();
           const timer = setTimeout(() => navigation.replace("TicketScreen", { booking: booking.data }), 1800);

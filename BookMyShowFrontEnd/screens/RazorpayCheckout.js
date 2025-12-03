@@ -77,7 +77,7 @@ export default function RazorpayCheckoutScreen({ route, navigation }) {
           // If you use auth token add it here:
           const token = await AsyncStorage.getItem("token");
 
-          await fetch(`http://10.90.13.242:3000/api/Payment/cancel`, {
+          await fetch(`http://192.168.1.42:3000/api/Payment/cancel`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

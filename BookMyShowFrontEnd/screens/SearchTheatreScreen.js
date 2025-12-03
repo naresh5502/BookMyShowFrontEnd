@@ -6,84 +6,134 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
-
-const API_BASE = "http://10.90.13.242:3000/api"; // change to your base
+const API_BASE = "http://192.168.1.42:3000/api";
 
 export default function SearchTheatreScreen({ navigation }) {
   const [query, setQuery] = useState("");
   const [cityId, setCityId] = useState(null);
+  const [cityName, setCityName] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [theatres, setTheatres] = useState([]);
+  const [results, setResults] = useState([]);
 
+  // Load user's selected city (cityId and cityName)
   useEffect(() => {
-    AsyncStorage.getItem("selectedCityId").then((id) => {
-        console.log("The selected City Id is ", id);
-        const selectedCityId = id;
+    Promise.all([
+      AsyncStorage.getItem("selectedCityId"),
+      AsyncStorage.getItem("selectedCityName")
+    ]).then(([id, name]) => {
+      console.log("Loaded city ID:", id, "City Name:", name);
       setCityId(id);
-      if (id) fetchTheatres(id, "");
+      setCityName(name);
     });
   }, []);
 
-  const fetchTheatres = async (cityIdToUse, q) => {
+  const performSearch = async (q, cityId, cityName) => {
+    if (!q.trim()) {
+      setResults([]);
+      return;
+    }
+
     setLoading(true);
     try {
-        console.log("Fetching theatres for cityId:", cityIdToUse, "with query:", q);
-      const url = `${API_BASE}/Theatre/search?cityId=${cityIdToUse}&query=${encodeURIComponent(q || "")}`;
+      // Pass both cityId and cityName as the city parameter
+      // The backend will try to match against the city field (string)
+      const searchParam = cityName || cityId; // Prefer city name, fallback to cityId
+      const url = `${API_BASE}/Shows/unified-search?q=${encodeURIComponent(q)}&city=${encodeURIComponent(searchParam)}`;
+      console.log("Calling:", url);
+
       const res = await fetch(url);
-      console.log("The response from theatre search ", res);
       const json = await res.json();
-      if (json?.status === 200) setTheatres(json.data || []);
-      else setTheatres([]);
+
+      const movies = (json.movies || []).map((m) => ({
+        _id: `movie-${m._id}`,
+        type: "movie",
+        movieId: m.movieId,
+        movieName: m.movieName,
+        moviePoster: m.moviePoster,
+        theatreName: m.theatreId?.name,
+        date: m.date,
+        startTime: m.startTime
+      }));
+
+      const theatres = (json.theatres || []).map((t) => ({
+        _id: `theatre-${t._id}`,
+        type: "theatre",
+        name: t.name,
+        address: t.address,
+        theatreId: t._id
+      }));
+
+      setResults([...movies, ...theatres]);
+      
     } catch (err) {
-      console.error("fetchTheatres error", err);
-      setTheatres([]);
-    } finally {
-      setLoading(false);
+      console.log("Search error:", err);
+      setResults([]);
     }
+    setLoading(false);
   };
 
   const onSearch = (text) => {
-    console.log("The search text received is ", text)
     setQuery(text);
-    if (!cityId) return;
-    // Debounce if you want — for now simple call:
-    fetchTheatres(cityId, text);
+    if (cityId || cityName) performSearch(text, cityId, cityName);
+  };
+
+  const renderItem = ({ item }) => {
+    if (item.type === "movie") {
+      return (
+        <TouchableOpacity
+          style={styles.movieCard}
+          onPress={() => navigation.navigate("MovieDetails", { movie: item })}
+        >
+          <View style={styles.rowBetween}>
+            <Text style={styles.movieName}>{item.movieName}</Text>
+            <Ionicons name="film-outline" size={20} color="red" />
+          </View>
+          <Text style={styles.subInfo}>
+            {item.theatreName} • {item.date} • {item.startTime}
+          </Text>
+        </TouchableOpacity>
+      );
+    }
+
+    return (
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() => navigation.navigate("TheatreDetails", { theatreId: item.theatreId })}
+      >
+        <View style={styles.rowBetween}>
+          <Text style={styles.name}>{item.name}</Text>
+          <Ionicons name="business-outline" size={20} color="blue" />
+        </View>
+        <Text style={styles.addr}>{item.address}</Text>
+      </TouchableOpacity>
+    );
   };
 
   return (
     <View style={styles.container}>
-        <View style={styles.backBtn}>
-            <TouchableOpacity onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-back" size={24} color="black"  />
-            </TouchableOpacity>
-      <Text style={styles.header}>Search Theatres</Text>
-
-        </View>
+      <View style={styles.backBtn}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color="black" />
+        </TouchableOpacity>
+        <Text style={styles.header}>Search</Text>
+      </View>
 
       <TextInput
-        placeholder="Search theatre name or address..."
+        placeholder="Search movies or theatres..."
         value={query}
         onChangeText={onSearch}
         style={styles.input}
       />
 
       {loading ? (
-        <ActivityIndicator style={{ marginTop: 20 }} />
+        <ActivityIndicator size="large" style={{ marginTop: 20 }} />
       ) : (
         <FlatList
-          data={theatres}
+          data={results}
           keyExtractor={(item) => item._id}
+          renderItem={renderItem}
           contentContainerStyle={{ padding: 12 }}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.card}
-              onPress={() => navigation.navigate("TheatreDetails", { theatreId: item._id })}
-            >
-              <Text style={styles.name}>{item.name}</Text>
-              <Text style={styles.addr}>{item.address}</Text>
-            </TouchableOpacity>
-          )}
-          ListEmptyComponent={<Text style={{ padding: 12 }}>No theatres found.</Text>}
+          ListEmptyComponent={<Text>No results found.</Text>}
         />
       )}
     </View>
@@ -91,20 +141,18 @@ export default function SearchTheatreScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" ,
-    paddingTop:35
+  container: { flex: 1, backgroundColor: "#fff", paddingTop: 35 },
+  backBtn: { flexDirection: "row", alignItems: "center", paddingHorizontal: 20 },
+  header: { fontSize: 20, fontWeight: "700", marginLeft: 12 },
+  input: { margin: 12, borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10 },
+  card: { padding: 14, backgroundColor: "#f5f5f5", borderRadius: 8, marginVertical: 6 },
+  movieCard: {
+    backgroundColor: "#fff4f4", padding: 14, borderRadius: 8, marginVertical: 6,
+    borderLeftWidth: 4, borderLeftColor: "red"
   },
-  backBtn:{
-    justifyContent:"flex-start",
-    alignItems:"center",
-    padding:20,
-    flexDirection:"row",
-  },
-  header: { fontSize: 20, fontWeight: "700", margin: 12 },
-  input: {
-    marginHorizontal: 12, borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10
-  },
-  card: { backgroundColor: "#fafafa", padding: 12, marginVertical: 8, borderRadius: 8 },
+  rowBetween: { flexDirection: "row", justifyContent: "space-between" },
+  movieName: { fontSize: 16, fontWeight: "700" },
   name: { fontSize: 16, fontWeight: "700" },
-  addr: { marginTop: 4, color: "#666" },
+  addr: { color: "#666" },
+  subInfo: { marginTop: 4, color: "#555" },
 });

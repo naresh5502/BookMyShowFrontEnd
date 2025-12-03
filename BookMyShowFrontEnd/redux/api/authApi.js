@@ -7,7 +7,7 @@ import { dynamicBaseQuery } from "../../utils/dynamicBaseQuery";
 export const authApi = createApi({
   reducerPath: "authApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://10.90.13.242:3000/api/",
+    baseUrl: "http://192.168.1.42:3000/api/",
     // attach token from state to each request (prepareHeaders receives getState)
     prepareHeaders: (headers, { getState }) => {
       const token = getState().auth?.token;

@@ -13,7 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { useGetShowsByMovieQuery, useGetShowsByMovieCityDateQuery } from "../redux/api/showApi";
 
-const BASE_API = "http://10.90.13.242:3000/api"; 
+const BASE_API = "http://192.168.1.42:3000/api"; 
 
 export default function ShowsScreen({ route, navigation }) {
   const { movieId, movie, city: cityFromParams } = route.params || {};

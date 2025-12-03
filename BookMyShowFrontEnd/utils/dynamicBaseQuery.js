@@ -8,9 +8,9 @@ export const dynamicBaseQuery = async (args, api, extraOptions) => {
   // if (!deviceIp) {
   //   console.warn("Failed to get device IP. Using fallback localhost.");
   //   deviceIp = "10.0.2.2"; // android emulator fallback
-  // }
+  // }`
 
-  const baseUrl = `http://10.90.13.242:3000/api/`;
+  const baseUrl = `http://192.168.1.42:3000/api/`;
 
   console.log("Base URL being used:", baseUrl);
 
